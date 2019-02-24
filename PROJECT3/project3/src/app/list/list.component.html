@@ -1,0 +1,16 @@
+<div id="container-floating">
+  <div id="floating-button" data-placement="left" data-original-title="Create" data-toggle="tooltip" (click)="newPost()">
+    <p class="plus">+</p>
+    <img class="edit" src="https://ssl.gstatic.com/bt/C3341AA7A1A076756462EE2E5CD71C11/1x/bt_compose2_1x.png">
+  </div>
+</div>
+
+<div class="list-group">
+	<a *ngFor="let post of posts" class="list-group-item" (click)="router.navigate(['/edit/'+post.postid]);">
+		<h4 class="list-group-item-heading">{{ post.title}}</h4>
+		<p class="list-group-item-text">{{ post.created.toLocaleString()}}</p>
+    </a>
+</div>
+
+
+

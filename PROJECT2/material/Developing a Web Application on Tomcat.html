@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<!-- saved from url=(0054)http://oak.cs.ucla.edu/classes/cs144/tomcat/index.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        code{white-space: pre-wrap;}
+        span.smallcaps{font-variant: small-caps;}
+        span.underline{text-decoration: underline;}
+        div.line-block{white-space: pre-line;}
+        div.column{display: inline-block; vertical-align: top; width: 50%;}
+        pre{background-color:#e7e7e7; border: solid 1px #000000; padding: 5px;}
+        code{background-color:#e7e7e7; padding: 1px;}
+        div.sourceCode { overflow-x: auto; }
+        table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+          margin: 0; padding: 0; vertical-align: baseline; border: none; }
+        table.sourceCode { width: 100%; line-height: 100%; }
+        td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+        td.sourceCode { padding-left: 5px; }
+        code > span.kw { color: #0000ff; } /* Keyword */
+        code > span.ch { color: #008080; } /* Char */
+        code > span.st { color: #008080; } /* String */
+        code > span.co { color: #008000; } /* Comment */
+        code > span.ot { color: #ff4000; } /* Other */
+        code > span.al { color: #ff0000; } /* Alert */
+        code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+        code > span.wa { color: #008000; font-weight: bold; } /* Warning */
+        code > span.cn { } /* Constant */
+        code > span.sc { color: #008080; } /* SpecialChar */
+        code > span.vs { color: #008080; } /* VerbatimString */
+        code > span.ss { color: #008080; } /* SpecialString */
+        code > span.im { } /* Import */
+        code > span.va { } /* Variable */
+        code > span.cf { color: #0000ff; } /* ControlFlow */
+        code > span.op { } /* Operator */
+        code > span.bu { } /* BuiltIn */
+        code > span.ex { } /* Extension */
+        code > span.pp { color: #ff4000; } /* Preprocessor */
+        code > span.do { color: #008000; } /* Documentation */
+        code > span.an { color: #008000; } /* Annotation */
+        code > span.cv { color: #008000; } /* CommentVar */
+        code > span.at { } /* Attribute */
+        code > span.in { color: #008000; } /* Information */
+    </style>
+    <link rel="stylesheet" href="./Developing a Web Application on Tomcat_files/pandoc.css">
+    <title>Developing a Web Application on Tomcat</title>
+</head>
+<body>
+<h1 id="developing-a-web-application-on-tomcat">Developing a Web Application on Tomcat</h1>
+<p>In this tutorial, you will learn how to develop a Web application for Tomcat using Java servlet and Java ServerPages (JSP) and package it as a Web application archive file. Before you get started, you need to run the <code>tomcat</code> container so that your tomcat server is running and is accessible at <a href="http://localhost:8888/" class="uri">http://localhost:8888/</a>.</p>
+<h2 id="deploying-a-sample-web-application-archive">Deploying a Sample Web Application Archive</h2>
+<p>Most Web applications consist of a fair number of files (like .html, .xml, .jsp, .jpg, .class, ...). A <em>Web application archive</em> (WAR) file is a collection of these files compressed in the zip format. By putting together all these files in a single archive file, you can simply drop it at <code>$CATALINA_BASE/webapps</code> to deploy it to your Tomcat server.</p>
+<p>To follow the first part of this tutorial, download our sample Web application archive file <a href="http://oak.cs.ucla.edu/classes/cs144/tomcat/cs144.war" class="uri">cs144.war</a>, copy it to <code>$CATALINA_BASE/webapps</code> in your container, and access <a href="http://localhost:8888/cs144/p1" class="uri">http://localhost:8888/cs144/p1</a> using your host browser. If you see the following page, you have successfully deployed our sample Web application. (If you get an error, try restarting your container.)</p>
+<figure>
+<img src="./Developing a Web Application on Tomcat_files/verify.png" width="784" height="356">
+</figure>
+<p>Now look at the contents in the the <code>$CATALINA_BASE/webapps</code> directory in your container. Note that Tomcat has created the <code>cs144</code> subdirectory (from the <code>cs144.war</code> file that we just copied). For efficiency reasons, when a new application archive is installed, Tomcat by default extracts and "caches" all the files in the archive into the subdirectory of the same name. This way, it can avoid reading the large <code>.war</code> file repeatedly to handle HTTP requests and read only the necessary files in the subdirectory.</p>
+<h3 id="mapping-an-http-request-to-an-application">Mapping an HTTP request to an application</h3>
+<p>Since a Tomcat server may host multiple .war files, it uses the <em>URL</em> of an HTTP request to determine which Web application should handle it. For example, an HTTP GET request for the the cs144 application we just deployed at <a href="http://localhost:8888/cs144/p1" class="uri">http://localhost:8888/cs144/p1</a> would look something like:</p>
+<pre><code>GET /cs144/p1 HTTP/1.1</code></pre>
+<p>Since the <em>first URL path component</em> of this request is <code>cs144</code>, Tomcat determines that this request should be handled by <code>cs144.war</code> archive.</p>
+<h3 id="structure-of-a-war-file">Structure of a WAR file</h3>
+<p>We now explain how the rest of the request URL (like <code>/p1</code> in <code>/cs144/p1</code>) is mapped to a file and/or a Java class in the WAR file. Most Web applications consist of a number of "static" files (.html, .jpg, ...) and Java class files (.class). Within a WAR file, all static files are stored at the root directory of a WAR file. As an example, take a look at the files inside our <code>cs144.war</code> file in <code>$CATALINA_BASE/webapps</code> (in principle, you will have to "unzip" the <code>cs144.war</code> file first to see its content, but since Tomcat has already expanded and "cached" its contents in the <code>cs144</code> subdirectory, you can just look at the <code>cs144</code> directory instead). You will see two files <code>README.txt</code> and <code>results.jsp</code> in the directory. These static files are accessible simply by appending their names to the URL of the application. For example, the <code>README.txt</code> file can be accessed at <a href="http://localhost:8888/cs144/README.txt" class="uri">http://localhost:8888/cs144/README.txt</a>. Similarly, if there were a file <code>another.html</code> in the subdirectory <code>dir</code>, the file would have been available at <a href="http://localhost:8888/cs144/dir/another.html" class="uri">http://localhost:8888/cs144/dir/another.html</a>.</p>
+<p>Now what about <a href="http://localhost:8888/cs144/p1" class="uri">http://localhost:8888/cs144/p1</a> ? This URL returns the above configuration page, but you may have noticed that there is no <code>p1</code> file! The reason why there is no file named <code>p1</code> is because the page is generated dynamically by a Java class in the WAR file. Then how does the Tomcat server know that <code>/cs144/p1</code> should be generated by a Java class?</p>
+<p>This is where the <em>deployment descriptor</em> file comes in, located at <code>WEB-INF/web.xml</code> in the WAR file. This XML file is processed by Tomcat automatically when your Web application is deployed and describes the important "mapping" information between a URL and the Java class files. Now open the <code>WEB-INF/web.xml</code> file. You will see the following content:</p>
+<div class="sourceCode"><pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;?xml</span> version="1.0" encoding="UTF-8"<span class="kw">?&gt;</span>
+<span class="kw">&lt;web-app</span><span class="ot"> id=</span><span class="st">"cs144.config"</span><span class="ot"> version=</span><span class="st">"2.4"</span><span class="ot"> xmlns=</span><span class="st">"http://java.sun.com/xml/ns/j2ee"</span><span class="kw">&gt;</span>
+    <span class="kw">&lt;display-name&gt;</span>CS144<span class="kw">&lt;/display-name&gt;</span>
+    <span class="kw">&lt;servlet&gt;</span>
+        <span class="kw">&lt;servlet-name&gt;</span>P1Servlet<span class="kw">&lt;/servlet-name&gt;</span>
+        <span class="kw">&lt;servlet-class&gt;</span>ConfigurationTest<span class="kw">&lt;/servlet-class&gt;</span>
+    <span class="kw">&lt;/servlet&gt;</span>
+    <span class="kw">&lt;servlet-mapping&gt;</span>
+        <span class="kw">&lt;servlet-name&gt;</span>P1Servlet<span class="kw">&lt;/servlet-name&gt;</span>
+        <span class="kw">&lt;url-pattern&gt;</span>/p1<span class="kw">&lt;/url-pattern&gt;</span>
+    <span class="kw">&lt;/servlet-mapping&gt;</span>
+    <span class="kw">&lt;welcome-file-list&gt;</span>
+        <span class="kw">&lt;welcome-file&gt;</span>index.html<span class="kw">&lt;/welcome-file&gt;</span>
+        <span class="kw">&lt;welcome-file&gt;</span>index.jsp<span class="kw">&lt;/welcome-file&gt;</span>
+    <span class="kw">&lt;/welcome-file-list&gt;</span>
+<span class="kw">&lt;/web-app&gt;</span></code></pre></div>
+<p>The important part is the <code>&lt;servlet&gt;</code> and <code>&lt;servlet-mapping&gt;</code> elements. The element <code>&lt;servlet&gt;</code> names the Java class <code>ConfigurationTest</code> as "P1Servlet". Then the element <code>&lt;servlet-mapping&gt;</code> maps the servlet named "P1servlet" to the URL pattern <code>/p1</code>. Combined together, the two elements say that requests to the URL <code>/p1</code> of this Web application should be handled by the Java class <code>ConfigurationTest</code>. In a WAR file, all Java class files are placed in the <code>WEB-INF/classes/</code> directory, so Tomcat will search for <code>WEB-INF/classes/ConfigurationTest.class</code> in the WAR file.</p>
+<h2 id="creating-your-first-web-application-archive">Creating Your First Web Application Archive</h2>
+<p>Now that we understand the basic structure of a WAR file, we will be creating a very simple WAR file, called <code>simple.war</code>, that just contains a static "hello, world" type HTML page and the basic <code>web.xml</code> file. Here is a step-by-step instruction on how you can create a .war file. Our "tomcat" container has necessary JDKs preinstalled, follow these instructions inside the container.</p>
+<ol type="1">
+<li>Create a temporary folder to place all files that should go into the .war file. Make it as your current directory by <code>cd</code> into the directory.</li>
+<li><p>Create a file named <code>hello.html</code> in your temporary directory with the following content.</p>
+<div class="sourceCode"><pre class="sourceCode html"><code class="sourceCode html"><span class="dt">&lt;!DOCTYPE </span>html<span class="dt">&gt;</span>
+<span class="kw">&lt;html&gt;</span>
+<span class="kw">&lt;head&gt;&lt;title&gt;</span>Hello World<span class="kw">&lt;/title&gt;&lt;/head&gt;</span>
+<span class="kw">&lt;body&gt;&lt;h1&gt;</span>Hello World<span class="kw">&lt;/h1&gt;&lt;/body&gt;</span>
+<span class="kw">&lt;/html&gt;</span></code></pre></div></li>
+<li><p>Create a <code>WEB-INF</code> folder and create the deployment descriptor file <code>web.xml</code> in it with the following content.</p>
+<div class="sourceCode"><pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;web-app</span><span class="ot"> id=</span><span class="st">"simple"</span><span class="ot"> version=</span><span class="st">"2.4"</span><span class="kw">&gt;</span>
+    <span class="kw">&lt;welcome-file-list&gt;</span>
+        <span class="kw">&lt;welcome-file&gt;</span>hello.html<span class="kw">&lt;/welcome-file&gt;</span>
+    <span class="kw">&lt;/welcome-file-list&gt;</span>
+<span class="kw">&lt;/web-app&gt;</span></code></pre></div>
+<p>This descriptor file will make the hello.html page as the "default page" that your application returns.</p></li>
+<li><p>At the root of your temporary folder (where you created the <code>hello.html</code> file), use the <code>jar</code> command to create your WAR file.</p>
+<pre class="term"><code>$ jar cfM simple.war *</code></pre>
+<p>Then your jar file will contain the following list of directories and files:</p>
+<pre><code>simple.war
+ |
+ +- hello.html
+ |
+ +- WEB-INF
+     +- web.xml</code></pre></li>
+</ol>
+<p>After building the <code>simple.war</code> file, and deploy it by copying it into the <code>$CATALINA_BASE/webapps</code> directory of your Tomcat server:</p>
+<pre class="term"><code>$ cp simple.war $CATALINA_BASE/webapps</code></pre>
+<p>Once you deploy it, point your browser to <a href="http://localhost:8888/simple" class="uri">http://localhost:8888/simple</a>. You should see the "Hello World" page you specified as the <code>welcome-file</code>.</p>
+<h2 id="adding-a-java-servlet-class">Adding a Java Servlet Class</h2>
+<p>We now implement a very simple Java <em>servlet</em> class and make it available at <a href="http://localhost:8888/simple/hello" class="uri">http://localhost:8888/simple/hello</a> by adding it to <code>simple.war</code> created above.</p>
+<h3 id="what-is-a-servlet">What is a Servlet?</h3>
+<p>A Java servlet is a program that runs on a Web Application server (such as Apache Tomcat) and acts as a middle layer between a requests coming from a Web browser and databases or other applications running on the server. Using a servlet, you can take input from users through HTML forms, perform complex data processing, and generate a Web page dynamically.</p>
+<p>More precisely, servlets perform the following tasks:</p>
+<ol type="1">
+<li>Read the HTTP request sent by a client (browser) and parse different parts of the requests, such as URL path, input parameters, HTTP cookies, etc.</li>
+<li>Process the request and generate a response. Generating results may require retrieving data from a database and performing complex data-processing operations.</li>
+<li>Send the response to the client (browser). This response can be in a variety of formats, including text (HTML or XML), binary (GIF images), etc.</li>
+</ol>
+<h3 id="life-cycle-of-servlet">Life Cycle of Servlet</h3>
+<p>A Java servlet is a Java class (based on the Java Servlet specification) that is run by a Web application server. A servlet is created by extending the <a href="https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/http/HttpServlet.html"><code>javax.servlet.http.HttpServlet</code></a> class in the <code>javax.servlet</code> and <code>javax.servlet.http</code> packages.</p>
+<p>A servlet's <em>life cycle</em>, the entire process from its creation through its destruction, is roughly as follows:</p>
+<ol type="1">
+<li>After the Web application server starts, the servlet's <code>init()</code> method is called.</li>
+<li>When the application server receives an HTTP request that should be handled by the servlet, the corresponding <code>doGet()</code>, <code>doPost()</code>, <code>doPut()</code>, etc., method of the servlet is called.</li>
+<li>Before the application server shuts down, the servlet's <code>destroy()</code> method is called.</li>
+<li>After the <code>destroy()</code> method call, the servlet is destructed and garbage collected.</li>
+</ol>
+<p>The main task of any servlet is to generate a response to an HTTP request, so you will have to override one (or more) <code>doXXX()</code> methods (override <code>doGet()</code> to handle the <code>HTTP GET</code> method, for instance) when you implement your own servlet.</p>
+<p>In addition, if your application needs to take certain initialization and clean-up actions, you will need to override the <code>init()</code> and <code>destroy()</code> methods, respectively. These methods are called <em>exactly once</em> at the beginning and the end of a servlet's life cycle, respectively.</p>
+<p>For your reference, here are the signatures of <code>init()</code>, <code>doGet()</code>, and <code>destroy()</code> methods of the <code>javax.servlet.http.HttpServlet</code> class:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="dt">void</span> <span class="fu">init</span>() <span class="kw">throws</span> ServletException {
+    <span class="co">// Initialization code...</span>
+}
+
+<span class="kw">public</span> <span class="dt">void</span> <span class="fu">doGet</span>(HttpServletRequest request, HttpServletResponse response)
+    <span class="kw">throws</span> ServletException, IOException {
+    <span class="co">// The data from the request can be obtained from the request parameter</span>
+    <span class="co">// The response from your code should be written to the response parameter</span>
+
+    <span class="co">// Request handling code...</span>
+}
+
+<span class="kw">public</span> <span class="dt">void</span> <span class="fu">destroy</span>() {
+    <span class="co">// Finalization code...</span>
+}</code></pre></div>
+<h3 id="adding-hello-servlet-class-to-simple.war">Adding Hello Servlet Class to simple.war</h3>
+<p>Now that you have a basic understanding of servlet, create your first servlet class, <code>Hello</code>, by extending <a href="https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/http/HttpServlet.html"><code>javax.servlet.http.HttpServlet</code></a>, and overriding the <code>doGet()</code> method like the following:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="kw">import javax.servlet.Servlet;</span>
+<span class="kw">import javax.servlet.ServletException;</span>
+<span class="kw">import javax.servlet.http.HttpServlet;</span>
+<span class="kw">import javax.servlet.http.HttpServletRequest;</span>
+<span class="kw">import javax.servlet.http.HttpServletResponse;</span>
+
+<span class="kw">import java.io.IOException;</span>
+<span class="kw">import java.io.PrintWriter;</span>
+
+<span class="kw">public</span> <span class="kw">class</span> Hello <span class="kw">extends</span> HttpServlet <span class="kw">implements</span> Servlet {
+       
+    <span class="kw">public</span> <span class="fu">Hello</span>() {}
+
+    <span class="kw">protected</span> <span class="dt">void</span> <span class="fu">doGet</span>(HttpServletRequest request, HttpServletResponse response)
+    <span class="kw">throws</span> ServletException, IOException
+    {
+        PrintWriter out = response.<span class="fu">getWriter</span>();
+        out.<span class="fu">println</span>(<span class="st">"&lt;!DOCTYPE html&gt;"</span>);
+        out.<span class="fu">println</span>(<span class="st">"&lt;html&gt;"</span>);
+        out.<span class="fu">println</span>(<span class="st">"&lt;head&gt;&lt;title&gt;Servlet Example&lt;/title&gt;&lt;/head&gt;"</span>);
+        out.<span class="fu">println</span>(<span class="st">"&lt;body&gt;Hello, "</span> + request.<span class="fu">getParameter</span>(<span class="st">"name"</span>) + <span class="st">"!&lt;br&gt;"</span>);
+        out.<span class="fu">println</span>(<span class="st">"Greetings from a Java Servlet.&lt;/body&gt;"</span>);
+        out.<span class="fu">println</span>(<span class="st">"&lt;/html&gt;"</span>);
+        out.<span class="fu">close</span>();
+    }
+}</code></pre></div>
+<p>By overriding the inherited <code>doGet()</code> method, you customize what your servlet should do when the Tomcat server forwards an HTTP GET request to it. Save the above Java code as <code>Hello.java</code> file and compile it into the Java class <code>Hello.class</code>.</p>
+<pre class="term"><code>$ javac Hello.java</code></pre>
+<p>Copy the complied <code>Hello.class</code> to <code>WEB-INF/classes</code> subfolder of your temporary folder (in which you created the <code>simple.war</code> file previously).</p>
+<p>Then modify your <code>web.xml</code> to add the following <code>&lt;servlet&gt;</code> and <code>&lt;servlet-mapping&gt;</code> elements as child elements of the <code>&lt;web-app&gt;</code> element.</p>
+<div class="sourceCode"><pre class="sourceCode xml"><code class="sourceCode xml"><span class="kw">&lt;servlet&gt;</span>
+    <span class="kw">&lt;servlet-name&gt;</span>Hello<span class="kw">&lt;/servlet-name&gt;</span>
+    <span class="kw">&lt;servlet-class&gt;</span>Hello<span class="kw">&lt;/servlet-class&gt;</span>
+<span class="kw">&lt;/servlet&gt;</span>
+<span class="kw">&lt;servlet-mapping&gt;</span>
+    <span class="kw">&lt;servlet-name&gt;</span>Hello<span class="kw">&lt;/servlet-name&gt;</span>
+    <span class="kw">&lt;url-pattern&gt;</span>/hello<span class="kw">&lt;/url-pattern&gt;</span>
+<span class="kw">&lt;/servlet-mapping&gt;</span></code></pre></div>
+<p>The above addition will forward all requests at the path <code>/hello</code> to our <code>Hello</code> class that we just created.</p>
+<p>Create a new <code>simple.war</code> file by running the <code>jar</code> command again at the root of your temporary folder:</p>
+<pre class="term"><code>$ jar cfM simple.war *</code></pre>
+<p>This command will build a new <code>simpler.war</code> file that contains the following directories and files:</p>
+<pre><code>simple.war
+    |
+    +- hello.html
+    |
+    +- WEB-INF
+        |
+        +- web.xml
+        |
+        +- classes
+            +- Hello.class</code></pre>
+<p>Deploy the new <code>simple.war</code>,</p>
+<pre class="term"><code>$ cp simple.war $CATALINA_BASE/webapps</code></pre>
+<p>and access the URL <a href="http://localhost:8888/simple/hello?name=John" class="uri">http://localhost:8888/simple/hello?name=John</a> through your browser on host. You should see a Web page with the HTML content generated by the servlet.</p>
+<figure>
+<img src="./Developing a Web Application on Tomcat_files/hello-servlet.png" width="772" height="356">
+</figure>
+<p>Note that by pointing your browser to that URL, you have issued an HTTP GET request, which has been handled by the <code>doGet()</code> method of your Java servlet, which generated the response by writing into the response parameter as shown above. Note that the HTML parameter "name" was passed to <code>doGet()</code> in <code>request</code> parameter, which was accessed through <code>request.getParameter("name")</code>. Read the documentation on <a href="https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/http/HttpServletRequest.html"><code>HttpServletRequest</code></a> and <a href="https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/http/HttpServletResponse.html"><code>HttpServletResponse</code></a> to learn about these classes.</p>
+<h2 id="model-view-controller-mvc-design-pattern">Model-View-Controller (MVC) Design Pattern</h2>
+<p>As you can see, it is relatively easy to write a Java class which returns HTML. It should also be apparent that returning an entire HTML page with println statements quickly becomes tedious and leads to an unmanageable spaghetti code of Java and HTML. For these reasons (and many others), we strongly suggest the <em>separation of your main application logic from data presentation</em> (this separation is often referred to as the <a href="http://en.wikipedia.org/wiki/Model-view-controller">Model-View-Controller (MVC)</a> design pattern). Although we will not be using a special MVC Java framework for this separation (such as <a href="http://struts.apache.org/">Struts</a>), conceptually you can still think of your Web site as having two distinct layers: a "business logic layer" handled by Java servlets and a "presentation" layer, which we will handle with JSP.</p>
+<p>The "business logic" in our application consists of retrieving the appropriate data for a user query. Once we have this data (e.g. a set of ItemIds and Names), we will forward it along with the request to a JSP page, which is, in some sense, a template HTML page. The JSP page will generate an HTML page using a combination of static HTML content and JSP <em>scriptlets</em>.</p>
+<h3 id="javaserver-page-jsp">JavaServer Page (JSP)</h3>
+<p>JavaServer Pages (JSP) is a standard that helps software developers create dynamically generated web pages based on HTML. JSP is similar to PHP and ASP, but it uses the Java programming language. JSP allows simple Java code to be interleaved with static HTML content, with the resulting page being compiled and executed on the server to generate the response document.</p>
+<p>JSP pages use several delimiters for scripting functions. The most basic is <code>&lt;% ... %&gt;</code>, which encloses a JSP <em>scriptlet</em>. A scriptlet is a fragment of Java code that is run when the user requests the page. Other common delimiters include <code>&lt;%= ... %&gt;</code> for <em>expressions</em>, which is replaced with the result of enclosed Java code.</p>
+<p>For example, the following JSP page</p>
+<div class="sourceCode"><pre class="sourceCode jsp"><code class="sourceCode jsp">&lt;p&gt;Counting to three:&lt;/p&gt;
+&lt;% <span class="kw">for</span> (<span class="dt">int</span> i=<span class="dv">1</span>; i&lt;<span class="dv">4</span>; i++) { %&gt;
+    &lt;p&gt;This number is &lt;%= i %&gt;.&lt;/p&gt;
+&lt;% } %&gt;
+&lt;p&gt;OK.&lt;/p&gt;</code></pre></div>
+<p>will generate the following HTML page and deliver it to the browser when the user requests it:</p>
+<div class="sourceCode"><pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;p&gt;</span>Counting to three:<span class="kw">&lt;/p&gt;</span>
+    <span class="kw">&lt;p&gt;</span>This number is 1.<span class="kw">&lt;/p&gt;</span>
+    <span class="kw">&lt;p&gt;</span>This number is 2.<span class="kw">&lt;/p&gt;</span>
+    <span class="kw">&lt;p&gt;</span>This number is 3.<span class="kw">&lt;/p&gt;</span>
+<span class="kw">&lt;p&gt;</span>OK.<span class="kw">&lt;/p&gt;</span></code></pre></div>
+<h3 id="refactoring-the-code">Refactoring the Code</h3>
+<p>Now, refactor your servlet code according to the MVC pattern by separating out "views" into a JSP page:</p>
+<ol type="1">
+<li><p>Modify your servlet class <code>doGet()</code> method to the following:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="kw">protected</span> <span class="dt">void</span> <span class="fu">doGet</span>(HttpServletRequest request, HttpServletResponse response)
+<span class="kw">throws</span> ServletException, IOException
+{
+&nbsp;&nbsp;&nbsp;&nbsp;String pageTitle = <span class="st">"Servlet Example"</span>;
+&nbsp;&nbsp;&nbsp;&nbsp;request.<span class="fu">setAttribute</span>(<span class="st">"title"</span>, pageTitle);
+&nbsp;&nbsp;&nbsp;&nbsp;request.<span class="fu">getRequestDispatcher</span>(<span class="st">"/index.jsp"</span>).<span class="fu">forward</span>(request, response);
+}</code></pre></div>
+<p>In general, a "controller" servlet code performs complex data retrieval and processing (while our example code is extremely simple), and sends the result to a JSP page, <code>index.jsp</code> in this example, for "presentation" of the result.</p></li>
+<li><p>Create a file named <code>index.jsp</code> with the following content:</p>
+<div class="sourceCode"><pre class="sourceCode jsp"><code class="sourceCode jsp">&lt;<span class="ot">!DOCTYPE html</span>&gt;
+&lt;html&gt;
+&lt;head&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;title&gt;&lt;%= request.getAttribute(<span class="st">"title"</span>) %&gt;&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;Hello, &lt;%= request.getParameter(<span class="st">"name"</span>) %&gt;!&lt;br&gt;
+    Greetings from JSP.
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+<p>The primary function of a JSP page is to "display" the result forwarded by the servlet controller as text and HTML tags, with occasional Java <em>scriptlets</em> and <em>expressions</em> sprinkled around. The character sequences <code>&lt;%=</code> and <code>%&gt;</code> in the JSP page enclose Java expressions, which are evaluated at run time when the page is returned. Since the servlet sets the "title" attribute of <code>request</code> to "Servlet Example" the first expression will be replaced with "Servlet Example" and the second expression will be replaced with the value of "name" parameter in the user's HTTP request.</p></li>
+</ol>
+<p>Once again, rebuild your <code>simple.war</code> file, this time also <em>including your <code>index.jsp</code> in the root</em>. Deploy this .war, and navigate again in your browser to the URL <a href="http://localhost:8888/simple/hello?name=John" class="uri">http://localhost:8888/simple/hello?name=John</a>. You should see a page with "Hello, John! Greetings from JSP" in the body and the title "Servlet Example".</p>
+<p>This example has shown a simple way (<code>setAttribute</code>/<code>getAttribute</code>) to pass (name, value) pairs from a Java servlet (the logic) to a JSP page (the presentation). The "request" <a href="https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/http/HttpServletRequest.html"><code>HttpServletRequest</code></a> object is available in both your Java servlet and in the JSP page, and can be used to pass objects from the servlet to the JSP in these named attributes. In this case, the value was a <code>String</code>, but it can be an arbitrarily complex Java object. Take some time to read the documentation for <a href="https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/http/HttpServletRequest.html"><code>HttpServletRequest</code></a> to learn what methods are available and how you can extract information from an HTTP request that your servlet or JSP page received. Make sure you understand the difference between <em>parameters</em> and <em>attributes</em>. Also, read one of many online tutorials on JSP such as <a href="http://www.jsptut.com/">this</a> to learn how you can embed Java code in a JSP page.</p> 
+
+
+</body></html>

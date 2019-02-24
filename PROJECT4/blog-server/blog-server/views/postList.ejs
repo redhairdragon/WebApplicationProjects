@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Post List</title>
+</head>
+<body>
+	<ul>
+		<% for (i=0;i<posts.length;i++){ %>
+		<% if (i==5){break;}%>
+			<li>
+			id: <%=  posts[i].postid %>
+			title: <%=  posts[i].title %>
+			body: <%=  posts[i].body %>
+			</li>
+		<%}%>	
+	</ul>
+	<%if(posts.length>5){%>
+		<% link="/blog/"+username+"?start="+posts[5].postid %>
+		<a href="<%=link%>" id='next'>NEXT</a>
+	<%}%>
+</body>
+</html>

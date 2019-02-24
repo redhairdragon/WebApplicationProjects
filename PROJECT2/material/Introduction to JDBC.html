@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!-- saved from url=(0052)http://oak.cs.ucla.edu/classes/cs144/jdbc/index.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        code{white-space: pre-wrap;}
+        span.smallcaps{font-variant: small-caps;}
+        span.underline{text-decoration: underline;}
+        div.line-block{white-space: pre-line;}
+        div.column{display: inline-block; vertical-align: top; width: 50%;}
+        pre{background-color:#e7e7e7; border: solid 1px #000000; padding: 5px;}
+        code{background-color:#e7e7e7; padding: 1px;}
+        div.sourceCode { overflow-x: auto; }
+        table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+          margin: 0; padding: 0; vertical-align: baseline; border: none; }
+        table.sourceCode { width: 100%; line-height: 100%; }
+        td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+        td.sourceCode { padding-left: 5px; }
+        code > span.kw { color: #0000ff; } /* Keyword */
+        code > span.ch { color: #008080; } /* Char */
+        code > span.st { color: #008080; } /* String */
+        code > span.co { color: #008000; } /* Comment */
+        code > span.ot { color: #ff4000; } /* Other */
+        code > span.al { color: #ff0000; } /* Alert */
+        code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+        code > span.wa { color: #008000; font-weight: bold; } /* Warning */
+        code > span.cn { } /* Constant */
+        code > span.sc { color: #008080; } /* SpecialChar */
+        code > span.vs { color: #008080; } /* VerbatimString */
+        code > span.ss { color: #008080; } /* SpecialString */
+        code > span.im { } /* Import */
+        code > span.va { } /* Variable */
+        code > span.cf { color: #0000ff; } /* ControlFlow */
+        code > span.op { } /* Operator */
+        code > span.bu { } /* BuiltIn */
+        code > span.ex { } /* Extension */
+        code > span.pp { color: #ff4000; } /* Preprocessor */
+        code > span.do { color: #008000; } /* Documentation */
+        code > span.an { color: #008000; } /* Annotation */
+        code > span.cv { color: #008000; } /* CommentVar */
+        code > span.at { } /* Attribute */
+        code > span.in { color: #008000; } /* Information */
+    </style>
+    <link rel="stylesheet" href="./Introduction to JDBC_files/pandoc.css">
+    <title>Introduction to JDBC</title>
+</head>
+<body>
+<h1 id="introduction-to-jdbc">Introduction to JDBC</h1>
+<p>This document illustrates the basics of the JDBC (Java Database Connectivity) API (Application Program Interface). Here, you will learn to use the basic JDBC API to create tables, insert values, query tables, retrieve results, update tables, create prepared statements, perform transactions on a database system from a Java program. This document draws from the official Sun tutorial on <a href="http://java.sun.com/docs/books/tutorial/jdbc/basics/index.html">JDBC Basics</a>.</p>
+<h2 id="overview">Overview</h2>
+<p>Call-level interfaces such as JDBC are programming interfaces allowing external programs to access SQL databases. They allow the execution of SQL commands within a general programming environment by providing library routines which interface with the database. In particular, Java-based JDBC has a rich collection of routines which make such an interface extremely simple and intuitive.</p>
+<p>Here is an easy way of visualizing what happens in a call level interface: You are writing a normal Java program. Somewhere in the program, you need to interact with a database. Using standard library routines, you open a connection to the database. You then use JDBC to send your SQL code to the database, and process the results that are returned. When you are done, you close the connection. For your convenience, all of the code for this article is included in the <a href="http://oak.cs.ucla.edu/classes/cs144/jdbc/accessDatabase.java" class="uri">accessDatabase.java</a> file.</p>
+<h2 id="establishing-a-connection">Establishing A Connection</h2>
+<p>As we said earlier, before a database can be accessed, a connection must be opened between our Java program (client) and the database (server). This involves two steps:</p>
+<ul>
+<li><p><strong>Load the vendor specific driver</strong></p>
+<p>Why would we need this step? To ensure portability and code reuse, the JDBC API was designed to be as independent of the version or the vendor of a database as possible. The differences between different DBMS's are encapsulated by each DBMS's driver, and we need to tell the Java DriverManager the correct driver to load. A MySQL driver is loaded using the following code:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">Class.<span class="fu">forName</span>(<span class="st">"com.mysql.jdbc.Driver"</span>);</code></pre></div></li>
+<li><p><strong>Make the connection</strong></p>
+<p>Once the driver is loaded and ready for a connection to be made, you may create an instance of a <code>Connection</code> object using:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">Connection con = DriverManager.<span class="fu">getConnection</span>(
+    <span class="st">"jdbc:mysql://localhost:3306/DatabaseName"</span>, username, passwd
+);</code></pre></div>
+<p>Okay, let's see what this jargon is. The first string is the URL for the database including the protocol (jdbc), the vendor (mysql), and the server port (//localhost:3306/) and your database instance name (DatabaseName). Of course, you need to replace DatabaseName with the name of your database. The username and passwd are your username and password, the same as you would enter into MySQL to access your account.</p></li>
+</ul>
+<p>That's it! The connection returned in the last step is an open connection which we will use to pass SQL statements to the database. In this code snippet, con is an open connection, and we will use it below.</p>
+<h2 id="creating-jdbc-statements">Creating JDBC Statements</h2>
+<p>An active connection is needed to create a <code>Statement</code> object. The following code snippet, using our <code>Connection</code> object <code>con</code>, does it for you:</p>
+<p>A JDBC <code>Statement</code> object is used to send your SQL statements to the DBMS, and should not to be confused with an SQL statement. A JDBC <code>Statement</code> object is associated with an open connection, and not any single SQL statement. You can think of a JDBC <code>Statement</code> object as a channel sitting on a connection, and passing one or more of your SQL statements (which you ask it to execute) to the DBMS.</p>
+<p>An active connection is needed to create a <code>Statement</code> object. The following code snippet, using our <code>Connection</code> object <code>con</code>, does it for you:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">Statement stmt = con.<span class="fu">createStatement</span>();</code></pre></div>
+<p>At this point, a <code>Statement</code> object exists, but it does not have an SQL statement to pass on to the DBMS. We learn how to do that in a following section.</p>
+<h2 id="executing-createinsertupdate-statements">Executing CREATE/INSERT/UPDATE Statements</h2>
+<p>Executing SQL statements in JDBC varies depending on the "intention" of the SQL statement. DDL (data definition language) statements such as table creation and table alteration statements, as well as statements to update the table contents, are all executed using the method <code>executeUpdate</code>. Notice that these commands change the state of the database, hence the name of the method contains "Update".</p>
+<p>The following snippet has examples of <code>executeUpdate</code> statements.</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">Statement stmt = con.<span class="fu">createStatement</span>();
+stmt.<span class="fu">executeUpdate</span>(
+    <span class="st">"CREATE TABLE Sells(bar VARCHAR(40), beer VARCHAR(40), price REAL)"</span>
+);
+stmt.<span class="fu">executeUpdate</span>(
+    <span class="st">"INSERT INTO Sells VALUES('Bar Of Foo', 'BudLite', 2.00)"</span>
+);
+String sqlString = 
+    <span class="st">"CREATE TABLE Bars(name VARCHAR(40), address VARCHAR(80), license INT)"</span>;
+stmt.<span class="fu">executeUpdate</span>(sqlString);</code></pre></div>
+<p>Note here that we are reusing the same <code>Statement</code> object rather than having to create a new one.</p>
+<p>When <code>executeUpdate</code> is used to call DDL statements (like CREATE TABLE), the return value is always zero, while data modification statement (like INSERT) executions will return a value greater than or equal to zero, which is the number of tuples affected in the relation.</p>
+<h2 id="executing-select-statements">Executing SELECT Statements</h2>
+<p>As opposed to the previous section statements, a query is expected to return a set of tuples as the result, and not change the state of the database. Not surprisingly, there is a corresponding method called <code>executeQuery</code>, which returns its results as a <code>ResultSet</code> object:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">String bar, beer;
+<span class="dt">float</span> price;
+ResultSet rs = stmt.<span class="fu">executeQuery</span>(<span class="st">"SELECT * FROM Sells"</span>);
+
+<span class="kw">while</span> (rs.<span class="fu">next</span>()) {
+&nbsp;&nbsp;&nbsp; bar = rs.<span class="fu">getString</span>(<span class="st">"bar"</span>);
+&nbsp;&nbsp;&nbsp; beer = rs.<span class="fu">getString</span>(<span class="st">"beer"</span>);
+&nbsp;&nbsp;&nbsp; price = rs.<span class="fu">getFloat</span>(<span class="st">"price"</span>);
+&nbsp;&nbsp;&nbsp; System.<span class="fu">out</span>.<span class="fu">println</span>(bar + <span class="st">" sells "</span> + beer + <span class="st">" for "</span> + price + <span class="st">"Dollars."</span>);
+}</code></pre></div>
+<p>The bag of tuples resulting from the query are contained in the variable <code>rs</code> which is an instance of <code>ResultSet</code>. A set is of not much use to us unless we can access each row and the attributes in each row. The <code>ResultSet</code> provides a cursor to us, which can be used to access each row in turn. The cursor is initially set just before the first row. Each invocation of the method <code>next()</code> causes it to move to the next row, if one exists and return true, or return false if there is no remaining row.</p>
+<p>We can use the <code>getXXX</code> method of the appropriate type to retrieve the attributes of a row. In the previous example, we used <code>getString</code> and <code>getFloat</code> methods to access the column values. Notice that we provided the name of the column whose value is desired as a parameter to the method. Also note that the VARCHAR type bar, beer have been converted to Java <code>String</code>, and the REAL to Java <code>float</code>.</p>
+<p>Equivalently, we could have specified the column number instead of the column name, with the same result. Thus the relevant statements would be:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">bar = rs.<span class="fu">getString</span>(<span class="dv">1</span>);
+price = rs.<span class="fu">getFloat</span>(<span class="dv">3</span>);
+beer = rs.<span class="fu">getString</span>(<span class="dv">2</span>);</code></pre></div>
+<h2 id="creating-jdbc-preparedstatement">Creating JDBC PreparedStatement</h2>
+<p>It is often safer or more efficient to use a <code>PreparedStatement</code> object for sending SQL statements to the DBMS, especially when the SQL statement needs to include input from users. The main feature which distinguishes it from its superclass <code>Statement</code> is that (1) it is given an SQL statement right when it is created and (2) the SQL statement can be parameterized, so that the same <code>PreparedStatement</code> can be repeatedly used for queries with different parameters that are provided by users.</p>
+<p><code>PreparedStatement</code>s are also created with a <code>Connection</code> method. The following snippet shows how to create a parameterized <code>PreparedStatement</code> with three input parameters:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">PreparedStatement preparedStmt = con.<span class="fu">prepareStatement</span>(
+    <span class="st">"UPDATE Sells SET price = ? WHERE bar = ? AND beer = ?"</span>
+);</code></pre></div>
+<p>This SQL statement is then sent to the DBMS <em>right away</em>, where it is compiled. The advantage offered is that if you need to use the same, or similar query with different parameters multiple times, the statement can be compiled and optimized by the DBMS <em>just once</em>. Contrast this with a use of a normal Statement where each use of the same SQL statement requires a compilation all over again.</p>
+<p>Before we can execute a <code>PreparedStatement</code>, we need to supply values for the parameters. This can be done by calling one of the <code>setXXX</code> methods defined in the class <code>PreparedStatement</code>. Most often used methods are <code>setInt</code>, <code>setFloat</code>, <code>setDouble</code>, <code>setString</code> etc. You can set these values before each execution of the prepared statement.</p>
+<p>Continuing the above example, we would write:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">preparedStmt.<span class="fu">setInt</span>(<span class="dv">1</span>, <span class="dv">3</span>);
+preparedStmt.<span class="fu">setString</span>(<span class="dv">2</span>, <span class="st">"Bar Of Foo"</span>);
+preparedStmt.<span class="fu">setString</span>(<span class="dv">3</span>, <span class="st">"BudLite"</span>);</code></pre></div>
+<p>Setting parameters <em>separately</em> from the main SQL statement by explicitly specifying the their types makes <code>PreparedStatement</code> much safer than plain <code>Statement</code> in terms of security. In fact, if you need to use a user input as part of your SQL statement, it is an industry-wide convention that you <strong><em>MUST</em></strong> use <code>PreparedStatement</code>, not plain <code>Statement</code>, to protect your application against many attacks, such as <a href="https://en.wikipedia.org/wiki/SQL_injection">SQL injection</a>.</p>
+<p>Once we finish plugging in the values of the parameters (as seen above), and we execute the statement by invoking the <code>executeUpdate</code> on it.</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="dt">int</span> n = preparedStmt.<span class="fu">executeUpdate</span>();</code></pre></div>
+<p>Similarly, if our <code>PreparedStatement</code> was created with a SQL SELECT statement, not an UPDATE statement, then we would execute such a statement by invoking the <code>executeQuery</code> on it, like the following:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">ResultSet rs = preparedStmt.<span class="fu">executeQuery</span>();</code></pre></div>
+<h2 id="handling-errors-with-exceptions">Handling Errors with Exceptions</h2>
+<p>The truth is errors always occur in software programs. Often, database programs are critical applications, and it is imperative that errors be caught and handled gracefully. Programs should recover and leave the database in a consistent state. Rollbacks used in conjunction with Java exception handlers are a clean way of achieving such a requirement.</p>
+<p>The client (program) accessing a server (database) needs to be aware of any errors returned from the server. JDBC gives access to such information by providing two levels of error conditions: <code>SQLException</code> and <code>SQLWarning</code>. <code>SQLException</code>s are Java exceptions which, if not handled, will terminate the application. <code>SQLWarning</code>s are subclasses of <code>SQLException</code>, but they represent nonfatal errors or unexpected conditions, and as such, can be ignored.</p>
+<p>In Java, statements which are expected to "throw" an exception or a warning are enclosed in a try block. If a statement in the try block throws an exception or a warning, it can be "caught" in one of the corresponding catch statements. Each catch statement specifies which exceptions it is ready to "catch".</p>
+<p>Here is an example of catching an <code>SQLException</code>:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java"><span class="kw">try</span> {
+&nbsp;&nbsp;&nbsp; stmt.<span class="fu">executeUpdate</span>(
+        <span class="st">"CREATE TABLE Sells (bar VARCHAR(40), beer VARCHAR(40), price REAL)"</span>
+    );
+&nbsp;&nbsp;&nbsp; stmt.<span class="fu">executeUpdate</span>(
+        <span class="st">"INSERT INTO Sells VALUES('Bar Of Foo', 'BudLite', 2.00)"</span>
+    );
+} <span class="kw">catch</span> (SQLException ex) {
+&nbsp;&nbsp;&nbsp; System.<span class="fu">err</span>.<span class="fu">println</span>(<span class="st">"SQLException: "</span> + ex.<span class="fu">getMessage</span>());
+}</code></pre></div>
+<p>In this case, an exception is thrown because beer is defined as VARCHAR which is a misspelling. Since there is no such data type in our DBMS, an <code>SQLException</code> is thrown. Alternatively, if your datatypes were correct, an exception might be thrown in case your database size goes over space quota and is unable to construct a new table.</p>
+<p><code>SQLWarning</code>s can be retrieved from <code>Connection</code> objects, <code>Statement</code> objects, and <code>ResultSet</code> objects. Each only stores the most recent <code>SQLWarning</code>. So if you execute another statement through your <code>Statement</code> object, for instance, any earlier warnings will be discarded. Here is a code snippet which illustrates the use of <code>SQLWarning</code>s:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">ResultSet rs = stmt.<span class="fu">executeQuery</span>(<span class="st">"SELECT bar FROM Sells"</span>);
+SQLWarning warn = stmt.<span class="fu">getWarnings</span>();
+<span class="kw">if</span> (warn != <span class="kw">null</span>) System.<span class="fu">out</span>.<span class="fu">println</span>(<span class="st">"Message: "</span> + warn.<span class="fu">getMessage</span>());
+
+SQLWarning warning = rs.<span class="fu">getWarnings</span>();
+<span class="kw">if</span> (warning != <span class="kw">null</span>) System.<span class="fu">out</span>.<span class="fu">println</span>(<span class="st">"Message: "</span> + warning.<span class="fu">getMessage</span>());</code></pre></div>
+<p><code>SQLWarning</code>s (as opposed to <code>SQLException</code>s) are actually rather rare -- the most common is a DataTruncation warning. The latter indicates that there was a problem while reading or writing data from the database.</p>
+<h2 id="importance-of-closing-everything">Importance of Closing Everything</h2>
+<p>When you are done with using your <code>Connection</code>, you need to explicitly close it by calling its <code>close()</code> method in order to release any other database resources (cursors, handles, etc) the connection may be holding on to.</p>
+<p>Actually, the safe pattern in Java is to close your <code>ResultSet</code>, <code>Statement</code>, and <code>Connection</code> (in that order) in a finally block when you are done with them, something like that:</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">Connection conn = <span class="kw">null</span>;
+PreparedStatement ps = <span class="kw">null</span>;
+ResultSet rs = <span class="kw">null</span>;
+
+<span class="kw">try</span> {
+    <span class="co">// Do stuff</span>
+    ...
+
+} <span class="kw">catch</span> (SQLException ex) {
+    <span class="co">// Exception handling stuff</span>
+    ...
+} <span class="kw">finally</span> {
+    <span class="kw">if</span> (rs != <span class="kw">null</span>) {
+        <span class="kw">try</span> {
+            rs.<span class="fu">close</span>();
+        } <span class="kw">catch</span> (SQLException e) { <span class="co">/* ignored */</span>}
+    }
+    <span class="kw">if</span> (ps != <span class="kw">null</span>) {
+        <span class="kw">try</span> {
+            ps.<span class="fu">close</span>();
+        } <span class="kw">catch</span> (SQLException e) { <span class="co">/* ignored */</span>}
+    }
+    <span class="kw">if</span> (conn != <span class="kw">null</span>) {
+        <span class="kw">try</span> {
+            conn.<span class="fu">close</span>();
+        } <span class="kw">catch</span> (SQLException e) { <span class="co">/* ignored */</span>}
+    }
+}</code></pre></div>
+<p>The finally block can be slightly improved into (to avoid the null check):</p>
+<div class="sourceCode"><pre class="sourceCode java"><code class="sourceCode java">} <span class="kw">finally</span> {
+    <span class="kw">try</span> { rs.<span class="fu">close</span>(); } <span class="kw">catch</span> (Exception e) { <span class="co">/* ignored */</span> }
+    <span class="kw">try</span> { ps.<span class="fu">close</span>(); } <span class="kw">catch</span> (Exception e) { <span class="co">/* ignored */</span> }
+    <span class="kw">try</span> { conn.<span class="fu">close</span>(); } <span class="kw">catch</span> (Exception e) { <span class="co">/* ignored */</span> }
+}</code></pre></div>
+<h2 id="finishing-remarks">Finishing Remarks</h2>
+<p>Hopefully, by now you are familiar enough with JDBC to write serious code. Here is the <a href="http://oak.cs.ucla.edu/classes/cs144/jdbc/accessDatabase.java" class="uri">accessDatabase.java</a> which provides the code that ties all the ideas in the tutorial together. The program connects to the database "CS144" using the username "cs144" with empty password.</p>
+<hr>
+<p>This document was written originally by Nathan Folkert for Prof. Jennifer Widom's CS145 class, Spring 2000. Subsequently, it was hacked by Mayank Bawa for Prof. Jeff Ullman's CS145 class, Fall 2000. This document was most recently edited by Junghoo Cho for CS144 class in Spring 2007.</p> 
+
+
+</body></html>

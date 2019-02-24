@@ -1,0 +1,36 @@
+\ escape 
+^ beginning
+$ end
+* {0,}
++ {1,}
+? {0,1}
+. anything but newline
+(abc) group "abc" and remember
+	'bar foo'.replace(/(...) (...)/, '$2 $1')
+	"foo bar"
+(?:x) match x but not remember
+x(?=y) Matches 'x' only if 'x' is followed by 'y'
+x(?!y) Matches 'x' only if 'x' is not followed by 'y'.
+x|y x or y
+{n} n occurance
+{n,} >= n occurance
+{n,m} 
+[xyz] char set. [a-d]===[abcd]
+[^xyz] negate xyz char set
+[\b] backsapce
+\b word boundary 
+	"moon": /\bm/ matches, /oo\b/ does not match
+\B non word boundary
+	/\B../ matches 'oo' in "noonday"
+	/y\B./ matches 'ye' in "possibly yesterday."
+\cX /\cM/ matches control-M 
+\d [0-9]
+\D [^0-9]
+\w [A-Za-z0-9_]
+\W negate \w
+\n linefeed
+\s white space character, including space, tab, form feed, line feed
+\S negate \s
+\t tab 
+\n where n>=1 used with parenthesis /apple(,)\sorange\1/ matches 'apple, orange,' in "apple, orange, cherry, peach."
+\0 NULL
