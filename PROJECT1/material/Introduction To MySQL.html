@@ -1,0 +1,266 @@
+
+<!-- saved from url=(0053)http://oak.cs.ucla.edu/classes/cs144/mysql/index.html -->
+<html class="gr__oak_cs_ucla_edu"><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+   <title>Introduction To MySQL</title>
+</head>
+<body data-gr-c-s-loaded="true">
+
+<h1>
+<font size="+3">Introduction To MySQL</font>
+
+
+</h1><h3>
+<hr width="100%"><a name="0.1_logging in to MySQL"></a>Starting MySQL Command-Line Interface</h3>
+MySQL is preinstalled within our provided container and automatically starts when you start the container. Once you are in the bash shell
+of the container, you can start the MySQL command-line interface by typing <tt>mysql</tt>:
+<pre>$ mysql </pre>
+Then you should receive the following prompt
+<pre>MariaDB [(none)]&gt;</pre>
+and be inside the MySQL command-line interface. All commands in this tutorial
+should be issued inside the MySQL command-line unless noted otherwise.
+
+<h3>
+<hr width="100%"><a name="0.1_logging in to MySQL"></a>Choosing a Databases in MySQL</h3>
+MySQL allows users to create <em>multiple</em> databases, so that a single MySQL server can host databases for many independent applications.
+Before you start issuing SQL commands to <tt>mysql</tt>, you first have
+to select the database that you will be using. In order to see what databases
+currently exist, run
+<pre>    SHOW DATABASES;</pre>
+You will see an output like
+<pre>+--------------------+
+| Database           |
++--------------------+
+| CS144              | 
+| information_schema | 
++--------------------+</pre>
+
+<tt>information_schema</tt> is a database that MySQL creates automatically and uses to maintain some internal statistics on datbases and tables.
+The other database, <code>CS144</code>,
+is what we created for the project (note database names are <em>case-sensitive</em> in MySQL). 
+
+Select the <tt>CS144</tt> database for the rest of this tutorial by issuing the command
+<pre>    USE CS144;</pre>
+
+It is also possible to specify a database as a command line parameter
+to the <tt>mysql</tt> command:
+<pre>$ mysql CS144</pre>
+
+<h3>
+
+<hr width="100%"><a name="0.1_creating a table"></a>Creating a Table</h3>
+Once you select a database, you can execute any SQL command. For example,
+you can create a table using the <tt>CREATE TABLE</tt> command:
+<pre>     CREATE TABLE &lt;tableName&gt; (
+         &lt;list of attributes and their types&gt;
+     );</pre>
+Note that all reserved keywords (like <tt>CREATE</tt> and <tt>TABLE</tt>) are <em>case-insensitive</em> and identifiers (like table names and attribute names) are <em>case-sensitive</em> in MySQL by default. That is, a table named <tt>STUDENT</tt> is different from the <tt>student</tt> table.<p></p>
+
+<p>You may enter a command on one line or on several lines. If your command runs
+over several lines, you will be prompted with " <tt>-&gt;</tt> " until you type
+the semicolon that ends any command.  An example table-creation command is:
+</p><pre>     CREATE TABLE tbl(a int, b char(20));</pre>
+This command creates a table
+named <tt>tbl</tt> with two attributes. The first, named <tt>a</tt>, is
+an integer, and the second, named <tt>b</tt>, is a character string of
+length (up to) 20.<p>
+
+When you create a table, you can declare a (set of) attribute(s) to be the primary key like:
+
+</p><pre>     CREATE TABLE &lt;tableName&gt; (..., a &lt;type&gt; PRIMARY KEY, b, ...);</pre>
+
+or
+
+<pre>     CREATE TABLE &lt;tableName&gt; (&lt;attrs and their types&gt;, PRIMARY KEY(a,b,c));</pre>
+
+<h3><hr width="100%"><a name="0.1_inserting tuples"></a>Inserting and Retrieving Tuples</h3>
+
+Having created a table, we can insert tuples into it. The simplest way
+to insert is with the <tt>INSERT</tt> command:
+<pre>     INSERT INTO &lt;tableName&gt;
+         VALUES( &lt;list of values for attributes, in order&gt; );</pre>
+For instance, we can insert the tuple <tt>(10, 'foobar')</tt> into relation
+
+<tt>tbl</tt> by
+<pre>     INSERT INTO tbl VALUES(10, 'foobar');</pre>
+<p>
+
+Once tuples are inserted, we can see the tuples in a relation with the command:
+</p><pre>     SELECT *
+     FROM &lt;tableName&gt;;</pre>
+
+For instance, after the above create and insert statements, the command
+<pre>     SELECT * FROM tbl;</pre>
+produces the result
+<pre>+------+--------+
+| a    | b      |
++------+--------+
+|   10 | foobar | 
++------+--------+</pre>
+
+
+
+<h3><hr width="100%"><a name="0.1_creating index"></a>Creating Index</h3>
+
+Having created a table, we can create an index on some attributes of the table.
+The command for creating an index is:
+<pre>     CREATE INDEX &lt;indexName&gt; ON &lt;tableName&gt;(&lt;list of attributes&gt;);</pre>
+For instance, we can create an index on <tt>b</tt> attribute of table <tt>tbl</tt> by
+<pre>     CREATE INDEX IdxOnAttrB ON tbl(b);</pre>
+<p>
+
+Later, if you want to drop an index, you use the following command
+</p><pre>     DROP INDEX &lt;indexName&gt; ON &lt;tableName&gt;;</pre>
+like
+<pre>     DROP INDEX IdxOnAttrB ON tbl;</pre>
+
+Note that in MySQL, an index is automatically created on primary keys and unique attributes.
+<h3> 
+<hr width="100%"><a name="0.1_getting rid of your tables"></a>Bulk Loading Data
+</h3>
+Instead of inserting tuples one at a time, it is possible to create a file that contains all tuples that you want to load in batch.
+The command for bulking loading tuples from a file is the following:
+<pre>     LOAD DATA LOCAL INFILE &lt;dataFile&gt; INTO TABLE &lt;tableName&gt;;</pre>
+where <tt>&lt;dataFile&gt;</tt> is the name of the file that contains the tuples. Each line in the data file corresponds to one tuple and columns are separated by a tab character (\t). 
+You can specify a NULL value in the data file using <tt>\N</tt>.<p>
+
+For example, the following data file
+</p><pre>1	first
+2	second
+3	\N</pre>
+will insert three tuples, (1, 'first'), (2, 'second'), and (3, NULL) to
+a table. If you want to use, say, commas to separate columns, not tabs, add <tt>FIELDS TERMINATED BY ','</tt> to the <tt>LOAD</tt> command as follows:
+
+<pre>     LOAD DATA LOCAL INFILE &lt;dataFile&gt; INTO TABLE &lt;tableName&gt; 
+     FIELDS TERMINATED BY ',';</pre>
+<p></p>
+
+If some columns in the data file is enclosed with, say, double quotes, you need to add <tt>OPTIONALLY ENCLOED BY '"'</tt> as well:
+<pre>     LOAD DATA LOCAL INFILE &lt;dataFile&gt; INTO TABLE &lt;tableName&gt;
+     FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"';</pre>
+
+<b>Notes on CR/LF issue:</b> If your host OS is Windows, you need to pay particular attention to how each line of a text file ends. By convention, Windows uses a pair of CR (carriage return) and LF (line feed) characters to terminate lines. On the other hand, Unix (including Linux and Mac OS X) use only a LF character. Therefore, problems arise when you are feeding a text file generated from a Windows program to a program running in Unix (such as mysql in Ubuntu). Since the end of the line of the input file is different from what the tools expect, you may encounter unexpected behavior from these tools. If you encounter this problem, you may want to run <tt>dos2unix</tt> command from Ubuntu on your Windows-generated text file. This command converts CR and LF at the end of each line in the input file to just LF. Type <tt>dos2unix --help</tt> to learn how to use this command. 
+<h3>
+
+<hr width="100%"><a name="0.1_getting rid of your tables"></a>Getting Rid of
+Your Tables</h3>
+To remove a table from your database, execute
+<pre>     DROP TABLE &lt;tableName&gt;;</pre>
+
+We suggest you execute
+<pre>     DROP TABLE tbl;</pre>
+after trying out the sequence of commands in this tutorial to avoid leaving a lot of garbage tables around.
+<h3>
+
+<hr width="100%"><a name="0.1_info about db"></a>Getting Information About
+Your TABLES</h3>
+You can get the set of all tables within the current database by 
+the following command:
+<pre>     SHOW TABLES;</pre>
+Once you know the list of tables, it is also possible 
+to learn more about the table by issuing the command:
+<pre>     DESCRIBE &lt;tableName&gt;;</pre>
+
+<h3><hr width="100%"><a name="0.1_executing sql from a file"></a>Executing SQL
+From a File</h3>
+Instead of typing and running SQL commands at a terminal, it is often more
+convenient to type the SQL command(s) into a file and cause the file to
+be executed.
+
+<p>To run the commands in <tt>foo.sql</tt> (in the current working directory), type:
+
+</p><pre>     SOURCE foo.sql;</pre>
+
+in <tt>mysql</tt>. Files like <tt>foo.sql</tt> that have SQL commands to be executed are often referred to as a (batch) script file. You can also execute the script file directly from the Unix shell by redirecting the input to <tt>mysql</tt> like the following:
+
+<pre>$ mysql CS144 &lt; foo.sql</pre>
+
+Again, pay attention to the CR/LF issue if your host OS is windows and if you create your SQL batch script file from Windows. Run <tt>dos2unix</tt> on the file if necessary. 
+
+<h3>
+
+<hr width="100%"><a name="0.1_recording your session"></a>Recording Your MySQL Session In a File</h3>
+<p></p><p></p><p></p>
+<tt>mysql</tt> provides the command <tt>TEE</tt> to save the queries that you executed and their results to a file.  At the <tt>mysql&gt;</tt> prompt, you say:
+
+<pre>     TEE foo.txt;</pre>
+and a file called <tt>foo.txt</tt> will appear in your current directory
+and will record all user input and system output, until you exit <tt>mysql</tt>
+or type:
+<pre>     NOTEE;</pre>
+Note that if the file <tt>foo.txt</tt> existed previously, new output will be appended to the file.
+
+<h3>
+<hr width="100%"><a name="0.1_quitting mysql"></a>Quitting <tt>mysql</tt></h3>
+
+To leave <tt>mysql</tt>, type
+<pre>     QUIT;</pre>
+<h3>
+
+</h3><h3>
+<hr width="100%"><a name="0.1_help facilities and other hints"></a>MySQL Users
+and Privileges</h3>
+By default, when you run <tt>mysql</tt>, you connect to MySQL
+as a user with the same name of your Unix account: <tt>cs144</tt>.
+It is also possible to connect to MySQL as a different user by specifying the <tt> -u </tt> option:
+<pre>$ mysql &lt;database&gt; -u &lt;username&gt; -p </pre>
+Here, <tt>&lt;username&gt;</tt> should be replaced with the username that you want to use, and the option <tt>-p</tt> asks <tt>mysql</tt> to prompt for the password of the user. So far in this tutorial, we haven't had to use the <tt> -p </tt> option because the default user <tt>cs144</tt> has empty password.<p>
+
+In our container, we created another user <code>root</code> with password <code>password</code>. For example, if you run 
+</p><pre>$ mysql CS144 -u root -p </pre>
+<tt>mysql</tt> will ask for a password, for which you have to type "<tt>password</tt>" (without quotes). After successful login, you are now connected to the <tt>CS144</tt> database as the user <tt>root</tt>.<p>
+
+The user <tt>root</tt> is the "superuser" or the "database administrator" of our MySQL installation and has full access to all databases and tables, including the ability to create new users, change user privileges, and so on. Because the root user has  unrestricted access, for security purposes, it is best to connect to MySQL as <code>root</code> only when you need to perform one of these administrative tasks. For your project work, the default user account <code>cs144</code> (no password) will be sufficeint, which has full access to the <code>CS144</code> database but nothing else.</p>
+
+If you are logged in to MySQL as the <tt>root</tt> user, you can create a new MySQL user with the <tt>CREATE USER</tt> command:
+<pre>    CREATE USER &lt;user&gt; IDENTIFIED BY '&lt;password&gt;';</pre>
+where <tt>&lt;user&gt;</tt> is the name of the new user and <tt>&lt;password&gt;</tt>
+is its password. To create a user with an empty password, you can simply
+type <tt>CREATE USER &lt;user&gt;;</tt> skipping the <tt>IDENTIFIED BY</tt> part. All user data is stored in the <tt>user</tt> table in the <tt>mysql</tt> database, issuing the following query as <tt>root</tt> will give you the list of current users:
+<pre>    SELECT * FROM mysql.user;</pre><p>
+
+Note that prefixing the table name <tt>user</tt> with the database name <tt>mysql</tt> with a dot allows you to access a table in a database not in currently in use. (<tt>mysql</tt> is the database where MySQL maintains administrative records.) Once a new user is created, you will have to grant appropriate privileges to the user with the <tt>GRANT</tt> command. For example, the command
+</p><pre>    GRANT ALL ON CS144.* to cs144@'%';</pre>
+will give all privileges for the <tt>CS144</tt> database to the user <tt>cs144</tt>. To see the privileges that you have, run:
+<pre>    SHOW GRANTS;</pre>
+which will produce an output like:
+<pre>+--------------------------------------------------+
+| Grants for cs144@%                               |
++--------------------------------------------------+
+| GRANT USAGE ON *.* TO 'cs144'@'%'                | 
+| GRANT ALL PRIVILEGES ON `CS144`.* TO 'cs144'@'%' | 
++--------------------------------------------------+</pre>
+
+<p>
+
+As the <tt>root</tt> user, you can also create and drop databases using <tt>CREATE DATABASE</tt> and <tt>DROP DATABASE</tt> command like the following:
+</p><pre>    CREATE DATABASE TESTDB;
+    DROP DATABASE TESTDB;</pre><p>
+
+As a final note, keep in mind that MySQL maintains its own username and password pairs independently of the underlying OS. 
+Thus, it is possible to create a MySQL user that does not exist in the underlying OS and vice versa.
+This means that your default MySQL user <tt>cs144</tt> is not related to your Debian account <tt>cs144</tt> except the shared name. In fact, as you may have noticed, <tt>cs144</tt> in MySQL has a different password (empty) from <tt>cs144</tt> of the Ubuntu account ("<tt>password</tt>"). </p><p>
+
+</p><h3>
+<hr width="100%"><a name="0.1_help facilities and other hints"></a>Help Facilities
+</h3>
+<tt>mysql</tt> provides internal help facilities for MySQL commands.
+To see a list of commands for which help is 
+available, type <tt>help</tt> or <tt>help contents</tt> in <tt>mysql</tt>.
+To look up help for a particular topic (listed in the contents), type 
+<tt>help</tt> followed by the topic. 
+<p>
+
+<!--
+The output from many SQL
+commands can be too long to display on a screen. You can use
+<pre>     pager less;</pre>
+to activate the paging feature (that will print one screen at a time).  When this feature is activated, output
+will pause at the end of each screen until you hit the &quot;space&quot; key. To
+turn this feature off, use
+<pre>     nopager;</pre>
+-->
+
+</p><hr width="100%"><font size="-1">This document was adapted from <a href="http://infolab.stanford.edu/~ullman/fcdb/oracle/or-intro.html">Getting Started With Oracle</a> by Junghoo "John" Cho for CS144 at UCLA.</font>
+
+
+</body></html>
