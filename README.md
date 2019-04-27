@@ -16,4 +16,4 @@ Github page is set up for Project3 as demonstration:
 
 
 
-![image-20190426214529645](/Users/cocoastarrion/Documents/CSPROJECTS/CS144/image-20190426214529645.png)
+![image-20190426214529645](./image-20190426214529645.png)
