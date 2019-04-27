@@ -1,0 +1,25 @@
+var simple = 2;
+
+console.log(simple);
+
+simple = "I'm text now!";
+
+console.log(simple);
+
+
+var array = new Array( 1, 2, "hey" );
+
+// console.log(array);
+
+array[4] = new Array( "a", "b" );
+
+// console.log(array[3]);
+// console.log(array[4]);
+
+var obj = { "some-text": "This is a point" };
+
+// console.log(obj);
+
+obj.x = -1.2;
+
+// console.log(obj);

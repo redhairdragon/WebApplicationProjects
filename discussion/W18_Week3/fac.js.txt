@@ -1,0 +1,13 @@
+
+function whatDoIDo(x) {
+    // If the input argument is invalid, throw an exception!
+    if (x < 0) throw new Error( "x must not be negative");
+
+    // Otherwise, compute a value and return normally.
+    for( var f = 1; x > 1; f *= x, x-- ) /* empty */ ;
+    return f;
+}
+
+console.log(whatDoIDo(1));
+console.log(whatDoIDo(5));
+console.log(whatDoIDo(10));

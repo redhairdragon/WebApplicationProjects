@@ -1,0 +1,20 @@
+// Understanding Javascript Scopes
+// http://stackoverflow.com/questions/500431/what-is-the-scope-of-variables-in-javascript
+
+var foo = 10;
+
+myFunction = function() {
+    var foo = 20;
+
+    (function() {      // Execute an anonymous function.
+        var wibble = 1;
+        // foo = 30;
+        var foo = 30;
+    }());
+
+    console.log(foo);  // what is foo here?
+};
+
+myFunction();
+
+console.log(foo);  // what is foo here?
